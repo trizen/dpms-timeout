@@ -16,7 +16,7 @@ use POSIX;
 use Time::HiRes qw(ualarm);
 
 my $pkgname = 'dpms-timeout';
-my $version = 0.02;
+my $version = 0.03;
 
 sub DEBUG() { 0 };    # debug mode
 

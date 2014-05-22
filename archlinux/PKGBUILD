@@ -2,7 +2,7 @@
 
 _pkgname=dpms-timeout
 pkgname=dpms-timeout-git
-pkgver=0.02.2.g5ca45a8
+pkgver=0.03
 pkgrel=1
 
 pkgdesc="Turn on/off the DPMS mode after an interval of seconds, based on mouse and keyboard activity. (git version)"
