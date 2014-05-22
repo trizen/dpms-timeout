@@ -12,7 +12,7 @@ license=('GPLv3')
 
 depends=('perl')
 source="https://github.com/trizen/${pkgname}/archive/${pkgver}.tar.gz"
-md5sums=('fa8384b395b0a5af3e6e2f2ca9abd15c')
+md5sums=('2936d4058c6faf7a1d76d6cb73d98f64')
 
 package() {
     cd "$pkgname-$pkgver"
