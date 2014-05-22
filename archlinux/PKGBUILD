@@ -1,21 +1,31 @@
 # Maintainer: Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>
 
-pkgname=dpms-timeout
-pkgver=0.02
+_pkgname=dpms-timeout
+pkgname=dpms-timeout-git
+pkgver=0.02.2.gf2f44b4
 pkgrel=1
 
-pkgdesc="Turn on/off the DPMS mode after an interval of seconds, based on mouse and keyboard activity."
+pkgdesc="Turn on/off the DPMS mode after an interval of seconds, based on mouse and keyboard activity. (git version)"
 url="https://github.com/trizen/${pkgname}"
 
 arch=('any')
 license=('GPLv3')
+makedepends=('git')
 
-depends=('perl')
-source="https://github.com/trizen/${pkgname}/archive/${pkgver}.tar.gz"
-md5sums=('2936d4058c6faf7a1d76d6cb73d98f64')
+provides=("${_pkgname}")
+conflicts=("${_pkgname}")
+depends=('perl>=5.10.0')
+
+source=("git://github.com/trizen/${_pkgname}.git")
+md5sums=('SKIP')
+
+pkgver() {
+    cd $_pkgname
+    git describe --always | sed -e 's|-|.|g'
+}
 
 package() {
-    cd "$pkgname-$pkgver"
-    install -Dm755 "$pkgname" "$pkgdir/usr/bin/$pkgname"
-    install -Dm644 "init/dpms-timeout.service" "$pkgdir/usr/lib/systemd/system/dpms-timeout.service"
+    cd "${_pkgname}"
+    install -Dm755 "${_pkgname}" "$pkgdir/usr/bin/${_pkgname}"
+    install -Dm644 "init/${_pkgname}.service" "$pkgdir/usr/lib/systemd/system/${_pkgname}.service"
 }
