@@ -14,10 +14,9 @@ use warnings;
 
 use POSIX;
 use Time::HiRes qw(ualarm);
-use Getopt::Long qw(GetOptions);
 
 my $pkgname = 'dpms-timeout';
-my $version = 0.01;
+my $version = 0.02;
 
 sub DEBUG() { 0 };    # debug mode
 
@@ -56,15 +55,18 @@ sub version {
     exit;
 }
 
-GetOptions(
-           'mouse=s'    => \$mouse_dev,
-           'keyboard=s' => \$kbd_dev,
-           'timeout=i'  => \$timeout,
-           'help'       => \&usage,
-           'version'    => \&version,
-           'players=s'  => sub { @video_players = split /[\s,]+/, $_[1] },
-          )
-  or die("Error in command line arguments!");
+if (@ARGV) {
+    require Getopt::Long;
+    Getopt::Long::GetOptions(
+                             'mouse=s'    => \$mouse_dev,
+                             'keyboard=s' => \$kbd_dev,
+                             'timeout=i'  => \$timeout,
+                             'help'       => \&usage,
+                             'version'    => \&version,
+                             'players=s'  => sub { @video_players = split /[\s,]+/, $_[1] },
+                            )
+      or die("Error in command line arguments!");
+}
 
 sub turn_screen {
     my ($arg) = @_;
@@ -107,12 +109,12 @@ foreach my $arg ([qw(s noexpose)], [qw(s noblank)], [qw(dpms 0 0 0)]) {
 while (1) {
     local $SIG{ALRM} = sub {
         $time_end = time if !$is_off;
-        undef $mouse_buf;
-        undef $kbd_buf;
+        undef $mouse_buf if defined($mouse_buf);
+        undef $kbd_buf   if defined($kbd_buf);
     };
 
     if (!$is_off and $time_end - $time_from >= $timeout and !video_player_running()) {
-        print STDERR "** Turning screen off...\n";
+        print STDERR "** Turning screen off...\n" if DEBUG;
         turn_screen('off') || warn "Couldn't turn off the screen!\n" if !DEBUG;
         $is_off = 1;
     }
@@ -131,7 +133,7 @@ while (1) {
         }
       ) {
         if ($is_off) {
-            print STDERR "** Turning screen on...\n";
+            print STDERR "** Turning screen on...\n" if DEBUG;
             turn_screen('on') || warn "Couldn't turn on the screen!\n" if !DEBUG;
             $is_off = 0;
         }
