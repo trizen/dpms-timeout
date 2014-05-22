@@ -1,0 +1,141 @@
+#!/usr/bin/perl
+
+# Author: Trizen
+# License: GPLv3
+# Date: 22 May 2014
+# Based on code from: http://perlmonks.org/?node_id=1084548
+
+# A small hack to turn on/off the DPMS mode after an interval of seconds,
+# based on mouse and keyboard activity. (with support for one or more video players)
+
+use 5.010;
+use strict;
+use warnings;
+
+use POSIX;
+use Time::HiRes qw(ualarm);
+use Getopt::Long qw(GetOptions);
+
+my $pkgname = 'dpms-timeout';
+my $version = 0.01;
+
+sub DEBUG() { 0 };    # debug mode
+
+my $timeout   = 600;  # seconds
+my $mouse_len = 1;    # bytes
+my $kbd_len   = 256;  # bytes
+
+# Input devices
+my $mouse_dev = '/dev/input/mouse0';
+my $kbd_dev   = '/dev/input/event3';
+
+# Video players process names
+my @video_players = qw(vlc mpv mplayer);
+
+sub usage {
+    local $" = ",";
+    print <<"EOT";
+usage: $0 [options]
+
+options:
+    --timeout=i     : turn off screen after i seconds (default: $timeout)
+    --mouse=s       : input path to mouse (default: $mouse_dev)
+    --keyboard=s    : input path to keyboard (default: $kbd_dev)
+    --players=s,s   : video players (default: @video_players)
+
+    --help          : print this message and exit
+    --version       : print version number and exit
+
+example: $0 --timeout=120 &
+EOT
+    exit;
+}
+
+sub version {
+    say "$pkgname $version";
+    exit;
+}
+
+GetOptions(
+           'mouse=s'    => \$mouse_dev,
+           'keyboard=s' => \$kbd_dev,
+           'timeout=i'  => \$timeout,
+           'help'       => \&usage,
+           'version'    => \&version,
+           'players=s'  => sub { @video_players = split /[\s,]+/, $_[1] },
+          )
+  or die("Error in command line arguments!");
+
+sub turn_screen {
+    my ($arg) = @_;
+    system 'xset', 'dpms', 'force', $arg;
+    return !$?;
+}
+
+sub video_player_running {
+    my %players;
+    @players{@video_players} = ();
+    open(my $pipe_h, '-|', 'ps', '-A') // return;
+    while (defined(my $line = readline($pipe_h))) {
+        return 1 if exists $players{(split ' ', $line)[-1]};
+    }
+    close $pipe_h;
+    return;
+}
+
+# Open mouse
+my $mouse_buf;
+my $mouse_fd = POSIX::open($mouse_dev, &POSIX::O_RDONLY)
+  or die("Cannot open $mouse_dev: $!");
+
+# Open keyboard
+my $kbd_buf;
+my $kbd_fd = POSIX::open($kbd_dev, &POSIX::O_RDONLY)
+  or die("Cannot open $kbd_dev: $!");
+
+my $is_off    = 0;
+my $time_from = time;
+my $time_end  = time;
+
+my @xset_args = ([qw(s noexpose)], [qw(s noblank)], [qw(dpms 0 0 0)]);
+foreach my $arg (@xset_args) {
+    system 'xset', @{$arg};
+}
+
+while (1) {
+    local $SIG{ALRM} = sub {
+        $time_end = time if !$is_off;
+        undef $mouse_buf;
+        undef $kbd_buf;
+    };
+
+    if (!$is_off and $time_end - $time_from >= $timeout) {
+        if (!video_player_running()) {
+            print STDERR "** Turning off...\n";
+            turn_screen('off') || warn "Couldn't turn off the screen!\n" if !DEBUG;
+            $is_off = 1;
+        }
+    }
+
+    ualarm 200_000;    # time out after 0.2 seconds
+    POSIX::read($mouse_fd, $mouse_buf, $mouse_len);
+
+    # Print the time diff in debug mode
+    say $time_end- $time_from if DEBUG;
+
+    if (
+        defined($mouse_buf) or do {
+            ualarm 200_000;    # time out after 0.2 seconds
+            POSIX::read($kbd_fd, $kbd_buf, $kbd_len);
+            defined($kbd_buf);
+        }
+      ) {
+        if ($is_off) {
+            print STDERR "** Turning on...\n";
+            turn_screen('on') || warn "Couldn't turn on the screen!\n" if !DEBUG;
+            $is_off = 0;
+        }
+        $time_from = time;
+    }
+    ualarm 0;
+}
