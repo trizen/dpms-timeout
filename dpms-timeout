@@ -28,6 +28,9 @@ my $kbd_len   = 256;  # bytes
 my $mouse_dev = '/dev/input/mouse0';
 my $kbd_dev   = '/dev/input/event3';
 
+# Display
+my $display = ':0.0';
+
 # Video players process names
 my @video_players = qw(vlc mpv mplayer);
 
@@ -41,6 +44,7 @@ options:
     --mouse=s       : input path to mouse (default: $mouse_dev)
     --keyboard=s    : input path to keyboard (default: $kbd_dev)
     --players=s,s   : video players (default: @video_players)
+    --display=s     : set a display (default: $display)
 
     --help          : print this message and exit
     --version       : print version number and exit
@@ -61,6 +65,7 @@ if (@ARGV) {
                              'mouse=s'    => \$mouse_dev,
                              'keyboard=s' => \$kbd_dev,
                              'timeout=i'  => \$timeout,
+                             'display=s'  => \$display,
                              'help'       => \&usage,
                              'version'    => \&version,
                              'players=s'  => sub { @video_players = split /[\s,]+/, $_[1] },
@@ -70,7 +75,7 @@ if (@ARGV) {
 
 sub turn_screen {
     my ($arg) = @_;
-    system 'xset', 'dpms', 'force', $arg;
+    system 'xset', '-display', $display, 'dpms', 'force', $arg;
     return !$?;
 }
 
@@ -106,7 +111,7 @@ my $time_from = time;
 my $time_end  = time;
 
 foreach my $arg ([qw(s noexpose)], [qw(s noblank)], [qw(dpms 0 0 0)]) {
-    system 'xset', @{$arg};
+    system 'xset', '-display', $display, @{$arg};
 }
 
 while (1) {
