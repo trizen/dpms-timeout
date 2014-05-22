@@ -74,18 +74,21 @@ sub turn_screen {
     return !$?;
 }
 
-sub video_player_running {
+{
     my %players;
     @players{@video_players} = ();
-    open(my $pipe_h, '-|', 'ps', '-A') // do {
-        warn "Can't execute `ps -A`: $!";
+
+    sub video_player_running {
+        open(my $pipe_h, '-|', 'ps', '-A') // do {
+            warn "Can't execute `ps -A`: $!";
+            return;
+        };
+        while (defined(my $line = readline($pipe_h))) {
+            return 1 if exists $players{(split ' ', $line)[-1]};
+        }
+        close $pipe_h;
         return;
-    };
-    while (defined(my $line = readline($pipe_h))) {
-        return 1 if exists $players{(split ' ', $line)[-1]};
     }
-    close $pipe_h;
-    return;
 }
 
 # Open mouse
