@@ -1,0 +1,21 @@
+# Maintainer: Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>
+
+pkgname=dpms-timeout
+pkgver=0.01
+pkgrel=1
+
+pkgdesc="Turn on/off the DPMS mode after an interval of seconds, based on mouse and keyboard activity."
+url="https://github.com/trizen/${pkgname}"
+
+arch=('any')
+license=('GPLv3')
+
+depends=('perl')
+source="https://github.com/trizen/${pkgname}/archive/${pkgver}.tar.gz"
+md5sums=('fa8384b395b0a5af3e6e2f2ca9abd15c')
+
+package() {
+    cd "$pkgname-$pkgver"
+    install -Dm755 "$pkgname" "$pkgdir/usr/bin/$pkgname"
+    install -Dm644 "init/dpms-timeout.service" "$pkgdir/usr/lib/systemd/system/dpms-timeout.service"
+}
