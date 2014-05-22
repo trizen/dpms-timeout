@@ -1,0 +1,13 @@
+[Unit]
+Description=Turn on/off screen after an interval of seconds.
+Documentation=http://github.com/trizen/dpms-timeout
+After=graphical.target
+
+[Service]
+Type=forking
+User=root
+RemainAfterExit=no
+ExecStart=/usr/bin/dpms-timeout
+
+[Install]
+WantedBy=graphical.target
