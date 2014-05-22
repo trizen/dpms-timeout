@@ -4,8 +4,8 @@ Documentation=http://github.com/trizen/dpms-timeout
 After=graphical.target
 
 [Service]
-Type=forking
-#User=root
+Type=simple
+User=root
 ExecStart=/usr/bin/dpms-timeout
 
 [Install]
